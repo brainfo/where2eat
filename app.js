@@ -37,7 +37,12 @@ class Where2Eat {
         
         if (this.apiKey) {
             localStorage.setItem('googleMapsApiKey', this.apiKey);
-            this.showMessage('API key saved successfully!', 'success');
+            this.showMessage('API key saved successfully! Please refresh the page to load Google Maps.', 'success');
+            
+            // Reload Google Maps API with new key
+            if (window.reloadGoogleMapsAPI) {
+                window.reloadGoogleMapsAPI();
+            }
         } else {
             this.showError('Please enter a valid API key');
         }
@@ -93,35 +98,48 @@ class Where2Eat {
     }
 
     async searchRestaurants(city, minRating) {
-        // First, get the coordinates for the city
-        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`;
-        
-        const geocodeResponse = await fetch(geocodeUrl);
-        const geocodeData = await geocodeResponse.json();
-        
-        if (geocodeData.status !== 'OK' || geocodeData.results.length === 0) {
-            throw new Error('City not found');
-        }
-
-        const location = geocodeData.results[0].geometry.location;
-        
-        // Search for restaurants near this location
-        const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=10000&type=restaurant&key=${this.apiKey}`;
-        
-        const placesResponse = await fetch(placesUrl);
-        const placesData = await placesResponse.json();
-        
-        if (placesData.status !== 'OK') {
-            throw new Error('Places search failed');
-        }
-
-        // Filter restaurants by rating and remove those without ratings
-        const filteredRestaurants = placesData.results.filter(restaurant => {
-            const rating = restaurant.rating || 0;
-            return rating >= minRating && restaurant.business_status === 'OPERATIONAL';
+        return new Promise((resolve, reject) => {
+            // Initialize the geocoder
+            const geocoder = new google.maps.Geocoder();
+            
+            // Geocode the city
+            geocoder.geocode({ address: city }, (results, status) => {
+                if (status !== 'OK' || !results.length) {
+                    reject(new Error('City not found'));
+                    return;
+                }
+                
+                const location = results[0].geometry.location;
+                
+                // Create a PlacesService (requires a map div)
+                const map = new google.maps.Map(document.createElement('div'));
+                const service = new google.maps.places.PlacesService(map);
+                
+                // Search for restaurants
+                const request = {
+                    location: location,
+                    radius: 10000,
+                    type: 'restaurant'
+                };
+                
+                service.nearbySearch(request, (results, status) => {
+                    if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                        reject(new Error('Places search failed: ' + status));
+                        return;
+                    }
+                    
+                    // Filter restaurants by rating
+                    const filteredRestaurants = results.filter(restaurant => {
+                        const rating = restaurant.rating || 0;
+                        return rating >= minRating && 
+                               restaurant.business_status === 'OPERATIONAL' &&
+                               restaurant.name;
+                    });
+                    
+                    resolve(filteredRestaurants);
+                });
+            });
         });
-
-        return filteredRestaurants;
     }
 
     displayRandomRestaurant() {

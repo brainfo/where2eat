@@ -70,6 +70,25 @@
         </div>
     </div>
 
+    <script>
+        // Load Google Maps API dynamically with the user's API key
+        function loadGoogleMapsAPI() {
+            const apiKey = localStorage.getItem('googleMapsApiKey');
+            if (apiKey) {
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+        }
+        
+        // Load API on page load if key exists
+        loadGoogleMapsAPI();
+        
+        // Reload API when key is saved
+        window.reloadGoogleMapsAPI = loadGoogleMapsAPI;
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

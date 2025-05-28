@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where2Eat - Random Restaurant Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍽️ Where2Eat</h1>
+            <p>Discover random restaurants in your city!</p>
+        </header>
+
+        <div class="config-section">
+            <h2>⚙️ Configuration</h2>
+            <div class="form-group">
+                <label for="apiKey">Google Maps API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your Google Maps API key">
+                <button id="saveApiKey">Save</button>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h2>🔍 Find Restaurant</h2>
+            <div class="form-group">
+                <label for="city">City:</label>
+                <input type="text" id="city" placeholder="e.g., New York, NY" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="rating">Minimum Rating:</label>
+                <select id="rating">
+                    <option value="0">Any Rating</option>
+                    <option value="3.0">3.0+ ⭐</option>
+                    <option value="3.5">3.5+ ⭐</option>
+                    <option value="4.0" selected>4.0+ ⭐</option>
+                    <option value="4.5">4.5+ ⭐</option>
+                </select>
+            </div>
+
+            <button id="findRestaurant" class="primary-btn">🎲 Find Random Restaurant</button>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Finding restaurants...</p>
+        </div>
+
+        <div id="result" class="result hidden">
+            <h2>🎯 Your Random Pick</h2>
+            <div class="restaurant-card">
+                <h3 id="restaurantName"></h3>
+                <div class="restaurant-details">
+                    <p id="restaurantRating"></p>
+                    <p id="restaurantAddress"></p>
+                    <p id="restaurantType"></p>
+                </div>
+                <div class="restaurant-actions">
+                    <button id="getDirections" class="secondary-btn">📍 Get Directions</button>
+                    <button id="findAnother" class="primary-btn">🎲 Find Another</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" class="error hidden">
+            <h2>❌ Error</h2>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

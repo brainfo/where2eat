@@ -98,88 +98,59 @@ class Where2Eat {
     }
 
     async searchRestaurants(city, minRating) {
-        try {
-            // First geocode the city to get coordinates
-            console.log('Geocoding city:', city);
-            const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`;
-            console.log('Geocoding URL:', geocodeUrl);
+        return new Promise((resolve, reject) => {
+            // Initialize the geocoder
+            const geocoder = new google.maps.Geocoder();
             
-            const geocodeResponse = await fetch(geocodeUrl);
-            const geocodeData = await geocodeResponse.json();
-            
-            console.log('Geocoding response:', geocodeData);
-            
-            if (geocodeData.status !== 'OK' || !geocodeData.results.length) {
-                console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message);
-                throw new Error(`City not found: ${geocodeData.status} - ${geocodeData.error_message || 'No results'}`);
-            }
-            
-            const location = geocodeData.results[0].geometry.location;
-            console.log('Location found:', location);
-            
-            // Use the new Nearby Search API
-            const searchRequest = {
-                includedTypes: [
-                    'food', 'meal_takeaway', 'meal_delivery',
-                    'cafe', 'bar', 'bakery'
-                ],
-                excludedTypes: ['lodging'],
-                locationRestriction: {
-                    circle: {
-                        center: {
-                            latitude: location.lat,
-                            longitude: location.lng
-                        },
-                        radius: 10000
+            // Geocode the city
+            geocoder.geocode({ address: city }, (results, status) => {
+                if (status !== 'OK' || !results.length) {
+                    reject(new Error('City not found'));
+                    return;
+                }
+                
+                const location = results[0].geometry.location;
+                
+                // Create a PlacesService (requires a map div)
+                const map = new google.maps.Map(document.createElement('div'));
+                const service = new google.maps.places.PlacesService(map);
+                
+                // Search for all nearby places (no type restriction to get more results)
+                const request = {
+                    location: location,
+                    radius: 10000
+                };
+                
+                service.nearbySearch(request, (results, status) => {
+                    if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                        reject(new Error('Places search failed: ' + status));
+                        return;
                     }
-                },
-                maxResultCount: 2000
-            };
-            
-            const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Goog-Api-Key': this.apiKey,
-                    'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.formattedAddress,places.types,places.businessStatus,places.id'
-                },
-                body: JSON.stringify(searchRequest)
+                    
+                    // Filter for food-related establishments, by rating, and exclude lodging
+                    const foodTypes = [
+                        'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
+                        'cafe', 'bar', 'bakery', 'fast_food', 'pizza_place',
+                        'sandwich_shop', 'ice_cream_shop', 'coffee_shop'
+                    ];
+                    
+                    const filteredRestaurants = results.filter(restaurant => {
+                        const rating = restaurant.rating || 0;
+                        const hasLodging = restaurant.types && restaurant.types.includes('lodging');
+                        const isFoodEstablishment = restaurant.types && 
+                            restaurant.types.some(type => foodTypes.includes(type));
+                        
+                        return rating >= minRating && 
+                               restaurant.business_status === 'OPERATIONAL' &&
+                               restaurant.name &&
+                               !hasLodging &&
+                               isFoodEstablishment;
+                    });
+                    
+                    resolve(filteredRestaurants);
+                });
             });
-            
-            if (!response.ok) {
-                throw new Error(`Places API error: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            if (!data.places) {
-                return [];
-            }
-            
-            // Filter by rating and transform to match legacy format
-            const filteredRestaurants = data.places
-                .filter(place => {
-                    const rating = place.rating || 0;
-                    return rating >= minRating && 
-                           place.businessStatus === 'OPERATIONAL' &&
-                           place.displayName;
-                })
-                .map(place => ({
-                    name: place.displayName?.text || 'Unknown',
-                    rating: place.rating,
-                    user_ratings_total: place.userRatingCount,
-                    vicinity: place.formattedAddress,
-                    types: place.types,
-                    business_status: place.businessStatus,
-                    place_id: place.id
-                }));
-            
-            return filteredRestaurants;
-            
-        } catch (error) {
-            console.error('Search error:', error);
-            throw error;
-        }
+        });
     }
 
     displayRandomRestaurant() {

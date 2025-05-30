@@ -100,14 +100,22 @@ class Where2Eat {
     async searchRestaurants(city, minRating) {
         try {
             // First geocode the city to get coordinates
-            const geocodeResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`);
+            console.log('Geocoding city:', city);
+            const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`;
+            console.log('Geocoding URL:', geocodeUrl);
+            
+            const geocodeResponse = await fetch(geocodeUrl);
             const geocodeData = await geocodeResponse.json();
             
+            console.log('Geocoding response:', geocodeData);
+            
             if (geocodeData.status !== 'OK' || !geocodeData.results.length) {
-                throw new Error('City not found');
+                console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message);
+                throw new Error(`City not found: ${geocodeData.status} - ${geocodeData.error_message || 'No results'}`);
             }
             
             const location = geocodeData.results[0].geometry.location;
+            console.log('Location found:', location);
             
             // Use the new Nearby Search API
             const searchRequest = {

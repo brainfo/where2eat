@@ -128,12 +128,15 @@ class Where2Eat {
                         return;
                     }
                     
-                    // Filter restaurants by rating
+                    // Filter restaurants by rating and exclude lodging
                     const filteredRestaurants = results.filter(restaurant => {
                         const rating = restaurant.rating || 0;
+                        const hasLodging = restaurant.types && restaurant.types.includes('lodging');
+                        
                         return rating >= minRating && 
                                restaurant.business_status === 'OPERATIONAL' &&
-                               restaurant.name;
+                               restaurant.name &&
+                               !hasLodging;
                     });
                     
                     resolve(filteredRestaurants);

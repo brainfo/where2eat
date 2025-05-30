@@ -37,12 +37,7 @@ class Where2Eat {
         
         if (this.apiKey) {
             localStorage.setItem('googleMapsApiKey', this.apiKey);
-            this.showMessage('API key saved successfully! Please refresh the page to load Google Maps.', 'success');
-            
-            // Reload Google Maps API with new key
-            if (window.reloadGoogleMapsAPI) {
-                window.reloadGoogleMapsAPI();
-            }
+            this.showMessage('API key saved successfully!', 'success');
         } else {
             this.showError('Please enter a valid API key');
         }
@@ -99,32 +94,31 @@ class Where2Eat {
 
     async searchRestaurants(city, minRating) {
         try {
-            // First geocode the city to get coordinates using the legacy geocoder
-            const geocoder = new google.maps.Geocoder();
+            // Use Geocoding REST API instead of JavaScript API
+            const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`;
             
-            const geocodeResult = await new Promise((resolve, reject) => {
-                geocoder.geocode({ address: city }, (results, status) => {
-                    if (status !== 'OK' || !results.length) {
-                        reject(new Error('City not found: ' + status));
-                        return;
-                    }
-                    resolve(results[0].geometry.location);
-                });
-            });
+            const geocodeResponse = await fetch(geocodeUrl);
+            const geocodeData = await geocodeResponse.json();
+            
+            if (geocodeData.status !== 'OK' || !geocodeData.results.length) {
+                throw new Error(`City not found: ${geocodeData.status}`);
+            }
+            
+            const location = geocodeData.results[0].geometry.location;
             
             // Use the new Nearby Search API (New)
             const searchRequest = {
                 includedTypes: [
-                    'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
-                    'cafe', 'bar', 'bakery', 'fast_food', 'pizza_place',
+                    'restaurant', 'meal_takeaway', 'meal_delivery',
+                    'cafe', 'bar', 'bakery', 
                     'sandwich_shop', 'ice_cream_shop', 'coffee_shop'
                 ],
                 excludedTypes: ['lodging'],
                 locationRestriction: {
                     circle: {
                         center: {
-                            latitude: geocodeResult.lat(),
-                            longitude: geocodeResult.lng()
+                            latitude: location.lat,
+                            longitude: location.lng
                         },
                         radius: 10000.0
                     }

@@ -1,0 +1,33 @@
+# Claude AI assistant files
+.claude/
+
+# Environment variables
+.env
+.env.local
+
+# Node modules (if using npm in the future)
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp 

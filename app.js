@@ -112,9 +112,8 @@ class Where2Eat {
             // Use the new Nearby Search API
             const searchRequest = {
                 includedTypes: [
-                    'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
-                    'cafe', 'bar', 'bakery', 'fast_food', 'pizza_place',
-                    'sandwich_shop', 'ice_cream_shop', 'coffee_shop'
+                    'food', 'meal_takeaway', 'meal_delivery',
+                    'cafe', 'bar', 'bakery'
                 ],
                 excludedTypes: ['lodging'],
                 locationRestriction: {
@@ -123,10 +122,10 @@ class Where2Eat {
                             latitude: location.lat,
                             longitude: location.lng
                         },
-                        radius: 10000.0
+                        radius: 10000
                     }
                 },
-                maxResultCount: 20
+                maxResultCount: 2000
             };
             
             const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
